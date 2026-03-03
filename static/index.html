@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BI Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f7f3ff;
+            --surface: #ffffff;
+            --border: #ede9fe;
+            --primary: #8b5cf6;
+            --primary-l: #c4b5fd;
+            --primary-d: #6d28d9;
+            --mint: #6ee7b7;
+            --mint-l: #d1fae5;
+            --rose: #fca5a5;
+            --rose-l: #fee2e2;
+            --sky: #93c5fd;
+            --sky-l: #dbeafe;
+            --amber: #fcd34d;
+            --amber-l: #fef3c7;
+            --text: #1e1b4b;
+            --text-mid: #4b5563;
+            --text-soft: #9ca3af;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background blobs */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 70% 55% at 5% 0%, rgba(196, 181, 253, 0.25) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 45% at 95% 100%, rgba(110, 231, 183, 0.18) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 35% at 80% 15%, rgba(252, 209, 77, 0.12) 0%, transparent 50%);
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+        }
+
+        /* ── HEADER ──────────────────────────────────────────── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 36px;
+        }
+
+        .logo {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .logo-sub {
+            font-size: 0.7rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            margin-top: 2px;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 5px 12px;
+            font-size: 0.68rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-mid);
+            box-shadow: 0 1px 4px rgba(139, 92, 246, 0.06);
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 5px var(--mint);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1)
+            }
+
+            50% {
+                opacity: .5;
+                transform: scale(.8)
+            }
+        }
+
+        /* ── INPUT CARD ──────────────────────────────────────── */
+        .input-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 20px 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.08), 0 1px 4px rgba(0, 0, 0, 0.03);
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .input-card:focus-within {
+            border-color: var(--primary-l);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1), 0 4px 24px rgba(139, 92, 246, 0.12);
+        }
+
+        .input-icon {
+            color: var(--primary-l);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        #questionInput {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text);
+            background: transparent;
+        }
+
+        #questionInput::placeholder {
+            color: var(--text-soft);
+        }
+
+        /* Voice button */
+        .voice-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: var(--mint-l);
+            color: #059669;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all .2s;
+            flex-shrink: 0;
+        }
+
+        .voice-btn:hover {
+            background: var(--mint);
+            transform: scale(1.05);
+        }
+
+        .voice-btn.recording {
+            background: var(--rose-l);
+            color: #dc2626;
+            animation: pulse-rec .8s ease-in-out infinite;
+        }
+
+        @keyframes pulse-rec {
+
+            0%,
+            100% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.1)
+            }
+        }
+
+        /* Submit button */
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-d));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 28px;
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            transition: all .2s;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.32);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── PIPELINE STATUS ─────────────────────────────────── */
+        .pipeline-bar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 20px;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.05);
+            overflow-x: auto;
+        }
+
+        .pipe-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 14px;
+            flex-shrink: 0;
+        }
+
+        .pipe-step:first-child {
+            padding-left: 0;
+        }
+
+        .pipe-step:last-child {
+            padding-right: 0;
+        }
+
+        .pipe-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            background: #f3f4f6;
+            color: var(--text-soft);
+            transition: all .3s;
+        }
+
+        .pipe-dot.active {
+            background: var(--amber-l);
+            color: #92400e;
+            animation: spin-dot .8s linear infinite;
+        }
+
+        .pipe-dot.done {
+            background: var(--mint-l);
+            color: #065f46;
+        }
+
+        .pipe-dot.error {
+            background: var(--rose-l);
+            color: #991b1b;
+        }
+
+        @keyframes spin-dot {
+            0% {
+                transform: rotate(0)
+            }
+
+            100% {
+                transform: rotate(360deg)
+            }
+        }
+
+        .pipe-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .pipe-label.active {
+            color: #92400e;
+        }
+
+        .pipe-label.done {
+            color: #065f46;
+        }
+
+        .pipe-arrow {
+            color: #d1d5db;
+            font-size: 0.75rem;
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── CARDS ───────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(139, 92, 246, 0.05);
+            animation: slideUp .4s ease both;
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .pill-purple {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .pill-mint {
+            background: var(--mint-l);
+            color: #065f46;
+        }
+
+        .pill-sky {
+            background: var(--sky-l);
+            color: #1e40af;
+        }
+
+        .pill-rose {
+            background: var(--rose-l);
+            color: #991b1b;
+        }
+
+        .pill-amber {
+            background: var(--amber-l);
+            color: #92400e;
+        }
+
+        .card-body {
+            padding: 18px 20px;
+        }
+
+        /* ── SQL BOX ─────────────────────────────────────────── */
+        #sqlBox {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.76rem;
+            color: #5b21b6;
+            background: #faf5ff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-break: break-all;
+            border: 1px solid #ede9fe;
+            min-height: 80px;
+        }
+
+        /* ── INSIGHT CARDS ───────────────────────────────────── */
+        #insightsGrid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .insight-card {
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            border: 1px solid transparent;
+            animation: slideUp .3s ease both;
+        }
+
+        .insight-card.high {
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .insight-card.medium {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .insight-card.low {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .insight-type-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+
+        .insight-card.high .insight-type-badge {
+            background: #fecdd3;
+            color: #9f1239;
+        }
+
+        .insight-card.medium .insight-type-badge {
+            background: #fde68a;
+            color: #78350f;
+        }
+
+        .insight-card.low .insight-type-badge {
+            background: #bbf7d0;
+            color: #14532d;
+        }
+
+        .insight-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.3;
+            margin-bottom: 3px;
+        }
+
+        .insight-detail {
+            font-size: 0.78rem;
+            color: var(--text-mid);
+            line-height: 1.5;
+        }
+
+        /* ── EXPLANATION BOX ─────────────────────────────────── */
+        #explanationBox {
+            font-size: 0.88rem;
+            line-height: 1.8;
+            color: var(--text-mid);
+            min-height: 80px;
+        }
+
+        /* ── TABLE ───────────────────────────────────────────── */
+        .table-wrap {
+            max-height: 380px;
+            overflow-y: auto;
+            border-radius: 0 0 16px 16px;
+        }
+
+        #dataTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.76rem;
+        }
+
+        #dataTable thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        #dataTable thead th {
+            background: linear-gradient(to right, #ede9fe, #e0e7ff);
+            color: #4c1d95;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            font-size: 0.67rem;
+            text-transform: uppercase;
+            padding: 10px 14px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        #dataTable tbody tr {
+            border-bottom: 1px solid #f5f3ff;
+            transition: background .12s;
+        }
+
+        #dataTable tbody tr:hover {
+            background: #faf5ff;
+        }
+
+        #dataTable tbody td {
+            padding: 9px 14px;
+            color: var(--text-mid);
+        }
+
+        /* ── CHART ───────────────────────────────────────────── */
+        #chartContainer {
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 40px 0;
+        }
+
+        .empty-icon {
+            width: 52px;
+            height: 52px;
+            border: 2px dashed var(--border);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--text-soft);
+        }
+
+        .empty-text {
+            font-size: 0.78rem;
+            color: var(--text-soft);
+            letter-spacing: 0.04em;
+        }
+
+        /* ── STATS STRIP ─────────────────────────────────────── */
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.05);
+        }
+
+        .stat-cell {
+            background: var(--surface);
+            padding: 14px 18px;
+        }
+
+        .stat-cell:first-child {
+            border-radius: 14px 0 0 14px;
+        }
+
+        .stat-cell:last-child {
+            border-radius: 0 14px 14px 0;
+        }
+
+        .stat-val {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-lbl {
+            font-size: 0.63rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--text-soft);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* ── LAYOUT GRIDS ────────────────────────────────────── */
+        .grid-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .span2 {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-3col {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .grid-3col .span2 {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 640px) {
+
+            .grid-3col,
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+
+            .span2 {
+                grid-column: span 1;
+            }
+
+            .stats-strip {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ── SCROLLBAR ───────────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f5f3ff;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-l);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* ── ANIMATIONS ──────────────────────────────────────── */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ── VOICE INDICATOR ─────────────────────────────────── */
+        .voice-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: var(--rose-l);
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.78rem;
+            color: #dc2626;
+            font-weight: 500;
+            animation: fadeIn .2s ease;
+        }
+
+        .voice-indicator.show {
+            display: flex;
+        }
+
+        .voice-wave {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .voice-wave span {
+            display: block;
+            width: 3px;
+            height: 12px;
+            background: #dc2626;
+            border-radius: 2px;
+            animation: wave .8s ease-in-out infinite;
+        }
+
+        .voice-wave span:nth-child(2) {
+            animation-delay: .1s;
+        }
+
+        .voice-wave span:nth-child(3) {
+            animation-delay: .2s;
+        }
+
+        .voice-wave span:nth-child(4) {
+            animation-delay: .3s;
+        }
+
+        @keyframes wave {
+
+            0%,
+            100% {
+                transform: scaleY(.4)
+            }
+
+            50% {
+                transform: scaleY(1)
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div>
+                <div class="logo">BI <span>Agent</span></div>
+                <div class="logo-sub">Enterprise Data Intelligence v2</div>
+            </div>
+            <div class="header-badges">
+                <div class="badge">
+                    <div class="dot"></div> Live
+                </div>
+                <div class="badge" id="queryBadge" style="display:none">
+                    <span id="queryCount">0</span> queries
+                </div>
+            </div>
+        </header>
+
+        <!-- INPUT CARD -->
+        <div class="input-card">
+            <span class="input-icon">✦</span>
+            <input id="questionInput" type="text"
+                placeholder="Ask anything about your data — type or speak your question...">
+            <div class="voice-indicator" id="voiceIndicator">
+                <div class="voice-wave"><span></span><span></span><span></span><span></span></div>
+                Listening...
+            </div>
+            <button class="voice-btn" id="voiceBtn" title="Voice input" onclick="toggleVoice()">🎤</button>
+            <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Analyze →</button>
+        </div>
+
+        <!-- PIPELINE STATUS BAR -->
+        <div class="pipeline-bar" id="pipelineBar">
+            <div class="pipe-step">
+                <div class="pipe-dot" id="pipe-sql">⚡</div>
+                <span class="pipe-label" id="pipe-sql-lbl">SQL Gen</span>
+            </div>
+            <span class="pipe-arrow">›</span>
+            <div class="pipe-step">
+                <div class="pipe-dot" id="pipe-validate">✔</div>
+                <span class="pipe-label" id="pipe-validate-lbl">Validate</span>
+            </div>
+            <span class="pipe-arrow">›</span>
+            <div class="pipe-step">
+                <div class="pipe-dot" id="pipe-execute">⚙</div>
+                <span class="pipe-label" id="pipe-execute-lbl">Execute</span>
+            </div>
+            <span class="pipe-arrow">›</span>
+            <div class="pipe-step">
+                <div class="pipe-dot" id="pipe-chart">📊</div>
+                <span class="pipe-label" id="pipe-chart-lbl">Chart</span>
+            </div>
+            <span class="pipe-arrow">›</span>
+            <div class="pipe-step">
+                <div class="pipe-dot" id="pipe-insight">🔍</div>
+                <span class="pipe-label" id="pipe-insight-lbl">Insights</span>
+            </div>
+            <span class="pipe-arrow">›</span>
+            <div class="pipe-step">
+                <div class="pipe-dot" id="pipe-explain">💬</div>
+                <span class="pipe-label" id="pipe-explain-lbl">Explain</span>
+            </div>
+        </div>
+
+        <!-- STATS STRIP -->
+        <div class="stats-strip">
+            <div class="stat-cell">
+                <div class="stat-val" id="stat-rows">—</div>
+                <div class="stat-lbl">Rows</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val" id="stat-cols">—</div>
+                <div class="stat-lbl">Columns</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val" id="stat-insights">—</div>
+                <div class="stat-lbl">Insights</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val" id="stat-chart">—</div>
+                <div class="stat-lbl">Chart Type</div>
+            </div>
+        </div>
+        
+        
+
+        <!-- ROW 1: SQL (left) + Explanation (right) -->
+        <div class="grid-2col" style="margin-bottom:16px">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-pill pill-amber">📈 Visualization</div>
+                    <span id="chartTypeLabel" style="font-size:0.68rem;color:var(--text-soft);margin-left:auto;"></span>
+                </div>
+                <div class="card-body">
+                    <div id="chartContainer">
+                        <div class="empty-state">
+                            <div class="empty-icon">📊</div>
+                            <div class="empty-text">Run a query to see your chart</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-pill pill-rose">🔍 Insights & Anomalies</div>
+                </div>
+                <div class="card-body">
+                    <div id="insightsGrid">
+                        <div class="empty-state" style="padding:20px 0">
+                            <div class="empty-icon">✨</div>
+                            <div class="empty-text">Insights will appear here</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 2: Chart (left, wider) + Insights (right) -->
+        <div class="grid-2col">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-pill pill-purple">🗄 SQL Query</div>
+                </div>
+                <div class="card-body">
+                    <pre id="sqlBox">-- Your generated query will appear here</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-pill pill-sky">💬 AI Summary</div>
+                </div>
+                <div class="card-body">
+                    <div id="explanationBox">Ask a question to get an AI-powered summary of the results.</div>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- ROW 3: Data Table (full width) -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-pill pill-mint">📋 Data Result</div>
+                <span id="rowCountLabel" style="font-size:0.7rem;color:var(--text-soft);margin-left:auto;"></span>
+            </div>
+            <div class="table-wrap">
+                <table id="dataTable"></table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

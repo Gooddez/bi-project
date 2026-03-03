@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Sensitive Information
+.env
+
+# uv / Package Manager files
+# (Note: Usually you DO commit uv.lock, but we ignore the build artifacts)
+.python-version
+
+# IDE / Editor folders
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
