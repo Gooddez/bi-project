@@ -6,11 +6,15 @@ Endpoints:
   GET  /api/schema  — return slim schema for debugging
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
+
+from pipeline import run_pipeline
+from tools import get_slim_schema, get_full_schema, test_db
+from agents import transcribe_audio
 
 from pipeline import run_pipeline
 from tools import get_slim_schema, get_full_schema, test_db
@@ -72,6 +76,15 @@ async def query(req: QueryRequest):
         "row_count":   result["row_count"],
         "error":       result["error"],
     }
+
+
+@app.post("/api/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+    """Receive audio from browser MediaRecorder, return Gemini transcript."""
+    audio_bytes = await audio.read()
+    mime_type   = audio.content_type or "audio/webm"
+    result      = await transcribe_audio(audio_bytes, mime_type)
+    return result
 
 
 # ─── Static files (serve index.html) ─────────────────────────────────────────

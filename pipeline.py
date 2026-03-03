@@ -87,6 +87,7 @@ async def run_pipeline(question: str) -> dict:
     schema = get_slim_schema()
 
     # ── Step 1: Generate SQL ──────────────────────────────────────────────────
+    # print("schema : ", schema)
     print("[1/5] sql_agent → generating SQL...")
     sql_raw = await run_agent(
         sql_runner,
