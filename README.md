@@ -75,8 +75,6 @@ cd bi-agent
 uv sync
 ```
 
-> `uv sync` reads `pyproject.toml`, creates `.venv`, and installs all dependencies in one step.
-
 ### 3. Configure environment variables
 
 ```bash

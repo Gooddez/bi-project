@@ -1,7 +1,7 @@
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.runners import InMemoryRunner
 
-GEMINI_MODEL = "gemma-3-27b-it"
+GEMINI_MODEL = "gemini-2.5-flash-lite"
 
 chart_agent = LlmAgent(
     model=GEMINI_MODEL,
