@@ -16,9 +16,6 @@ from pipeline import run_pipeline
 from tools import get_slim_schema, get_full_schema, test_db
 from agents import transcribe_audio
 
-from pipeline import run_pipeline
-from tools import get_slim_schema, get_full_schema, test_db
-
 app = FastAPI(title="BI Agent v2", version="2.0.0")
 
 app.add_middleware(

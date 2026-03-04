@@ -39,8 +39,17 @@ Surgical — change the minimum required to fix the query. Do not rewrite unnece
 - Ambiguous column reference → qualify with table alias
 - LAG()/LEAD() used directly on unaggregated column inside GROUP BY → wrap in CTE first, aggregate in CTE, apply LAG() in outer SELECT
 - Window function in WHERE clause → move to CTE or subquery, filter in outer query
+- Calendar_Year/Calendar_Quarter/Calendar_Month used on Facts_Monthly_Sales_and_Quota or Facts_Monthly_Sales directly → these tables have NO date columns, only ID_Calendar_Month (FK). Fix by adding: JOIN dbo.Dim_Calendar_Month AS dcm ON <alias>.ID_Calendar_Month = dcm.ID_Calendar_Month and replace WHERE Calendar_Year = 'X' with WHERE dcm.Calendar_Year = X (integer)
+- Column names with spaces on DataSet_Monthly_Sales_and_Quota → wrap every column in [square brackets]: [Calendar Year], [Product Category], [Revenue EUR] etc.
+- Duplicate column names in SELECT (e.g. SELECT 'Q1' AS Quarter, x, 'Q2' AS Quarter, y) → rewrite as simple GROUP BY returning one row per period instead of PIVOT
 - ORDER BY Month_Label (string) in time series → replace with ORDER BY Calendar_Year, CAST(RIGHT(Calendar_Month_ISO,2) AS INT)
 - LAG() with aggregate inside e.g. LAG(SUM(col)) without OVER partition matching the GROUP BY → rewrite as CTE pattern
+
+## CALENDAR_QUARTER FORMAT:
+- Calendar_Quarter is stored as '1', '2', '3', '4' (single digit string, no 'Q' prefix)
+- Calendar_Year is stored as '2023', '2024', '2025' (4-digit string)
+- Correct filter: WHERE Calendar_Year = '2025' AND Calendar_Quarter IN ('1', '2')
+- If you see WHERE Calendar_Quarter = 'Q1' or 'Q1 2025' or '2025.Q1' → fix to the correct format above
 
 ## CALENDAR_MONTH_ISO FORMAT — CRITICAL:
 - Stored as 'YYYY.MM' e.g. '2024.04' — ALWAYS filter with this exact format

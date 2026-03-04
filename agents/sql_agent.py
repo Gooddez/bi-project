@@ -40,15 +40,61 @@ Be precise. Use ONLY table names and column names that appear in the provided sc
 - Net Revenue        = Revenue - Discount
 
 ## TABLE QUICK-REFERENCE:
-| Table | Use When |
-|---|---|
-| dbo.Dim_Product | product names, prices, categories |
-| dbo.Facts_Monthly_Sales | monthly sales facts (needs JOINs) |
-| dbo.Facts_Daily_Sales | daily granularity |
-| dbo.Dim_Sales_Office | country/region/geography |
-| dbo.Dim_Calendar_Month | time dimension |
-| dbo.DataSet_Monthly_Sales | EASIEST flat table — prefer for most aggregations |
-| dbo.DataSet_Monthly_Sales_and_Quota | sales + quota comparison |
+| Table | Use When | Date Filter Column |
+|---|---|---|
+| dbo.DataSet_Monthly_Sales | EASIEST — prefer for most aggregations | Calendar_Year, Calendar_Month_ISO directly |
+| dbo.DataSet_Monthly_Sales_and_Quota | sales + quota comparison (has space in column names — always use [brackets]) | [Calendar Year], [Calendar Month ISO] directly |
+| dbo.Facts_Monthly_Sales | monthly facts, needs JOINs | JOIN Dim_Calendar_Month ON ID_Calendar_Month, then filter dcm.Calendar_Year |
+| dbo.Facts_Monthly_Sales_and_Quota | quota vs actual, needs JOINs | JOIN Dim_Calendar_Month ON ID_Calendar_Month, then filter dcm.Calendar_Year |
+| dbo.Facts_Daily_Sales | daily granularity, needs JOINs | JOIN Dim_Calendar ON ID_Order_Date |
+| dbo.Dim_Product | product names, prices, categories | — |
+| dbo.Dim_Sales_Office | country/region/geography | — |
+| dbo.Dim_Calendar_Month | time dimension for JOIN | Calendar_Year (int), Calendar_Month_Number (int) |
+
+## CRITICAL — Facts tables have NO date columns directly:
+- dbo.Facts_Monthly_Sales_and_Quota has ONLY ID_Calendar_Month (date FK) — NO Calendar_Year, NO Calendar_Quarter
+- To filter by year on Facts tables, ALWAYS JOIN dbo.Dim_Calendar_Month:
+  JOIN dbo.Dim_Calendar_Month AS dcm ON fmsaq.ID_Calendar_Month = dcm.ID_Calendar_Month
+  WHERE dcm.Calendar_Year = 2025   ← integer, not string
+- dbo.DataSet_Monthly_Sales has Calendar_Year as char '2025' — no JOIN needed
+- dbo.DataSet_Monthly_Sales_and_Quota has [Calendar Year] as char '2025' — no JOIN needed but use [brackets]
+
+## COLUMNS WITH SPACES — DataSet_Monthly_Sales_and_Quota:
+Every column in this table has spaces — ALWAYS wrap in [square brackets]:
+[Sales Country], [Product Category], [Calendar Year], [Calendar Month ISO],
+[Revenue EUR], [Gross Profit EUR], [Revenue Quota], [Calendar Quarter]
+
+## COLUMN VALUE FORMATS — EXACT VALUES IN DB:
+| Column | Format | Example |
+|---|---|---|
+| Calendar_Year | 4-digit string | '2024', '2025' |
+| Calendar_Quarter | single digit string | '1', '2', '3', '4' |
+| Calendar_Month_ISO | 'YYYY.MM' | '2024.04', '2025.01' |
+| Calendar_Month | Full English month name | 'January', 'February', ..., 'December' |
+
+- Filter by month name: WHERE Calendar_Month = 'April' AND Calendar_Year = '2025'
+- ALWAYS pair Calendar_Month or Calendar_Quarter with Calendar_Year to avoid cross-year ambiguity
+
+## CALENDAR_QUARTER FORMAT:
+- Calendar_Quarter is stored as a single digit string: '1', '2', '3', '4'
+- Calendar_Year is stored as a 4-digit string: '2023', '2024', '2025'
+- Filter by quarter AND year: WHERE Calendar_Year = '2025' AND Calendar_Quarter = '1'
+- Filter Q1 and Q2 of 2025: WHERE Calendar_Year = '2025' AND Calendar_Quarter IN ('1', '2')
+- NEVER use WHERE Calendar_Quarter = 'Q1' or 'Q1 2025' or '2025.Q1'
+- ALWAYS combine Calendar_Year + Calendar_Quarter in WHERE — Quarter alone is ambiguous
+
+## COMPARING TWO PERIODS — CORRECT PATTERN:
+- When user asks to compare two months/quarters, return ONE ROW PER PERIOD, not a PIVOT
+- CORRECT — simple GROUP BY returning 2 rows:
+  SELECT
+    Calendar_Quarter,
+    SUM(Revenue) AS TotalRevenue
+  FROM dbo.DataSet_Monthly_Sales
+  WHERE Calendar_Quarter IN ('2025.Q1', '2025.Q2')
+  GROUP BY Calendar_Quarter
+  ORDER BY Calendar_Quarter
+- WRONG — PIVOT with duplicate column names like: SELECT 'Q1' AS Quarter, Q1Rev, 'Q2' AS Quarter, Q2Rev
+- NEVER produce a query where the same column name appears more than once in SELECT
 
 ## CALENDAR_MONTH_ISO FORMAT — CRITICAL:
 - Calendar_Month_ISO is stored as 'YYYY.MM' e.g. '2024.04' for April 2024, '2024.05' for May 2024

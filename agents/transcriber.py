@@ -17,7 +17,6 @@ load_dotenv()
 
 
 async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/webm") -> dict:
-    print("HERE!!! transcribe_audio")
     """
     Send raw audio bytes to Gemini 2.0 Flash for transcription.
 

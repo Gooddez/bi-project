@@ -90,8 +90,13 @@ def _hbar(df, x, y, color, title):
 
 
 def _line(df, x, y, color, title, sort_x=None):
+    # Sort by Calendar_Month_ISO if available (guaranteed correct chronological order)
+    # then pass explicit list to Altair — because sort=None in Altair means alphabetical, NOT row order
+    if "Calendar_Month_ISO" in df.columns and x != "Calendar_Month_ISO":
+        df = df.sort_values("Calendar_Month_ISO")
+    x_order = list(df[x].astype(str)) if x in df.columns else None
     encode_args = dict(
-        x=alt.X(x + ":N", sort=(None if sort_x == "data" else alt.EncodingSortField(field=x, order="ascending")), title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
+        x=alt.X(x + ":N", sort=x_order, title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
         y=alt.Y(y + ":Q", title=y.replace("_", " ")),
         tooltip=list({x, y} & set(df.columns)),
     )
@@ -103,9 +108,12 @@ def _line(df, x, y, color, title, sort_x=None):
     return _base_config((line + points).properties(**BASE_PROPS))
 
 
-def _area(df, x, y, color, title):
+def _area(df, x, y, color, title, sort_x=None):
+    if "Calendar_Month_ISO" in df.columns and x != "Calendar_Month_ISO":
+        df = df.sort_values("Calendar_Month_ISO")
+    x_order = list(df[x].astype(str)) if x in df.columns else None
     encode_args = dict(
-        x=alt.X(x + ":N", sort=(None if sort_x == "data" else alt.EncodingSortField(field=x, order="ascending")), title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
+        x=alt.X(x + ":N", sort=x_order, title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
         y=alt.Y(y + ":Q", title=y.replace("_", " ")),
         tooltip=list({x, y} & set(df.columns)),
     )

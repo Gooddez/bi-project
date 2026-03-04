@@ -110,7 +110,7 @@ async def run_pipeline(question: str) -> dict:
     # ── Step 3: Execute SQL ───────────────────────────────────────────────────
     print("[3/5] execute_query → running SQL...")
     result = execute_query(sql)
-    print(result)
+
     if result["error"]:
         print(f"      Error: {result['error']} — attempting recovery...")
         recovered_raw = await run_agent(
@@ -175,10 +175,19 @@ async def run_pipeline(question: str) -> dict:
             f"DATA SUMMARY:\n{data_summary}"
         )
 
-        insight_raw, explanation = await asyncio.gather(
+        results = await asyncio.gather(
             run_agent(insight_runner, insight_prompt, "insights_json"),
             run_agent(explainer_runner, explain_prompt, "explanation"),
+            return_exceptions=True,   # one agent crashing won't cancel the other
         )
+
+        insight_raw  = results[0] if not isinstance(results[0], Exception) else ""
+        explanation  = results[1] if not isinstance(results[1], Exception) else ""
+
+        if isinstance(results[0], Exception):
+            print(f"      [WARN] insight_agent failed: {results[0]}")
+        if isinstance(results[1], Exception):
+            print(f"      [WARN] explainer_agent failed: {results[1]}")
 
         insights_parsed = safe_parse_json(insight_raw, fallback=[])
         insights = insights_parsed if isinstance(insights_parsed, list) else []

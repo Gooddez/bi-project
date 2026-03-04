@@ -151,6 +151,21 @@ def profile_dataframe(df: pd.DataFrame, max_sample: int = 100) -> dict:
     if df is None or df.empty:
         return {"columns": [], "row_count": 0, "sample": [], "numeric_summary": {}}
 
+    # Deduplicate columns before profiling — duplicate col names cause df[col] to return
+    # a DataFrame instead of a Series, breaking .dtype and all numeric operations
+    if df.columns.duplicated().any():
+        df = df.copy()
+        seen = {}
+        new_cols = []
+        for c in df.columns:
+            if c in seen:
+                seen[c] += 1
+                new_cols.append(f"{c}_{seen[c]}")
+            else:
+                seen[c] = 0
+                new_cols.append(c)
+        df.columns = new_cols
+
     numeric_summary = {}
     for col in df.select_dtypes(include="number").columns:
         s = df[col].dropna()
