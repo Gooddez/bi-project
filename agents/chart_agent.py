@@ -49,6 +49,14 @@ Be decisive. Pick the single best chart type. When in doubt, prefer clarity over
 - Has 2 numerics → scatter
 - Small part-of-whole (≤7 slices) → pie
 - Category + numeric distribution → boxplot
+- Has MoM_Growth_Pct or growth % column → line (x = Month_Label, y = MoM_Growth_Pct)
+- Has both Revenue and Prev_Revenue columns → line (use Revenue as y, ignore Prev_Revenue)
+
+## COLUMN SELECTION FOR TIME SERIES:
+- When data has Month_Label column → always use it as x (it is pre-formatted for display)
+- When data has Calendar_Year and Calendar_Month_ISO but no Month_Label → use Calendar_Month_ISO as x
+- NEVER use Calendar_Year alone as x for monthly data (too coarse)
+- For line/area charts with Month_Label as x: set "sort_x": "data" in your output so chart preserves row order (do not sort alphabetically)
 
 ## OUTPUT FORMAT (strict JSON, nothing else):
 {

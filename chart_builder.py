@@ -89,9 +89,9 @@ def _hbar(df, x, y, color, title):
     )
 
 
-def _line(df, x, y, color, title):
+def _line(df, x, y, color, title, sort_x=None):
     encode_args = dict(
-        x=alt.X(x + ":N", sort=None, title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
+        x=alt.X(x + ":N", sort=(None if sort_x == "data" else alt.EncodingSortField(field=x, order="ascending")), title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
         y=alt.Y(y + ":Q", title=y.replace("_", " ")),
         tooltip=list({x, y} & set(df.columns)),
     )
@@ -105,7 +105,7 @@ def _line(df, x, y, color, title):
 
 def _area(df, x, y, color, title):
     encode_args = dict(
-        x=alt.X(x + ":N", sort=None, title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
+        x=alt.X(x + ":N", sort=(None if sort_x == "data" else alt.EncodingSortField(field=x, order="ascending")), title=x.replace("_", " "), axis=alt.Axis(labelAngle=-45)),
         y=alt.Y(y + ":Q", title=y.replace("_", " ")),
         tooltip=list({x, y} & set(df.columns)),
     )
@@ -207,6 +207,7 @@ def build_chart(config: dict, df: pd.DataFrame) -> Optional[str]:
     color      = config.get("color")
     size       = config.get("size")
     x2         = config.get("x2")
+    sort_x     = config.get("sort_x")   # "data" = preserve row order (time series)
 
     cols = set(df.columns)
 

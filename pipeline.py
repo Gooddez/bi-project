@@ -110,7 +110,7 @@ async def run_pipeline(question: str) -> dict:
     # ── Step 3: Execute SQL ───────────────────────────────────────────────────
     print("[3/5] execute_query → running SQL...")
     result = execute_query(sql)
-
+    print(result)
     if result["error"]:
         print(f"      Error: {result['error']} — attempting recovery...")
         recovered_raw = await run_agent(

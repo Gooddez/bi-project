@@ -37,6 +37,37 @@ Surgical — change the minimum required to fix the query. Do not rewrite unnece
 - Column names with spaces → wrap in [brackets]
 - Invalid T-SQL function (e.g. DATE_FORMAT) → replace with T-SQL equivalent (DATENAME, FORMAT, etc.)
 - Ambiguous column reference → qualify with table alias
+- LAG()/LEAD() used directly on unaggregated column inside GROUP BY → wrap in CTE first, aggregate in CTE, apply LAG() in outer SELECT
+- Window function in WHERE clause → move to CTE or subquery, filter in outer query
+- ORDER BY Month_Label (string) in time series → replace with ORDER BY Calendar_Year, CAST(RIGHT(Calendar_Month_ISO,2) AS INT)
+- LAG() with aggregate inside e.g. LAG(SUM(col)) without OVER partition matching the GROUP BY → rewrite as CTE pattern
+
+## CALENDAR_MONTH_ISO FORMAT — CRITICAL:
+- Stored as 'YYYY.MM' e.g. '2024.04' — ALWAYS filter with this exact format
+- Filter single month: WHERE Calendar_Month_ISO = '2024.04'
+- Filter range: WHERE Calendar_Month_ISO IN ('2024.04', '2024.05')
+- Filter full year: WHERE LEFT(Calendar_Month_ISO, 4) = '2024'
+- NEVER use: WHERE MONTH(...)=4 or '2024-04' or just '04'
+- Month_Label formula: DATENAME(MONTH, DATEFROMPARTS(CAST(LEFT(Calendar_Month_ISO,4) AS INT), CAST(RIGHT(Calendar_Month_ISO,2) AS INT), 1)) + ' ' + LEFT(Calendar_Month_ISO,4)
+
+## CORRECT CTE PATTERN FOR MONTH-OVER-MONTH:
+WITH monthly AS (
+  SELECT
+    Calendar_Month_ISO,
+    DATENAME(MONTH, DATEFROMPARTS(CAST(LEFT(Calendar_Month_ISO,4) AS INT), CAST(RIGHT(Calendar_Month_ISO,2) AS INT), 1))
+      + ' ' + LEFT(Calendar_Month_ISO,4) AS Month_Label,
+    SUM(Revenue) AS Revenue
+  FROM dbo.DataSet_Monthly_Sales
+  GROUP BY Calendar_Month_ISO
+)
+SELECT
+  Month_Label,
+  Revenue,
+  LAG(Revenue, 1) OVER (ORDER BY Calendar_Month_ISO) AS Prev_Revenue,
+  ROUND((Revenue - LAG(Revenue,1) OVER (ORDER BY Calendar_Month_ISO))
+    / NULLIF(LAG(Revenue,1) OVER (ORDER BY Calendar_Month_ISO), 0) * 100, 2) AS MoM_Pct
+FROM monthly
+ORDER BY Calendar_Month_ISO
 """,
     output_key="validated_sql"
 )
